@@ -7,7 +7,9 @@ import { listCommand, categoriesCommand } from "./commands/list";
 import { schemaCommand } from "./schema";
 import type { CLIOutput } from "./types";
 
-const HELP = `arxiv — agent-friendly arXiv CLI
+const HELP = `arxiv — agent-friendly arXiv CLI (no API key required)
+
+Scrapes arxiv.org HTML by default. Use --api to fall back to the Atom XML API.
 
 Commands:
   search <query>              Search papers. Returns structured JSON results.
@@ -16,18 +18,23 @@ Commands:
     --sort <field>            Sort by: relevance | lastUpdatedDate | submittedDate
     --order <dir>             Order: asc | desc
     --category, --cat, -c     Filter by category (e.g. cs.AI)
+    --type, -t <searchtype>   Search in: all | title | author | abstract (scrape only)
     --fields <f1,f2,...>      Return only these paper fields
+    --api                     Use Atom XML API instead of HTML scraping
 
   paper <arxiv-id>            Get full metadata for a single paper.
     --fields <f1,f2,...>      Return only these paper fields
+    --api                     Use Atom XML API instead of HTML scraping
 
   download <arxiv-id>         Download paper PDF.
     --output, -o <path>       Output file path
     --dry-run                 Resolve PDF URL without downloading
+    --api                     Use Atom XML API instead of HTML scraping
 
   list <category>             List recent papers in a category.
     --max, -n <num>           Max results (default: 10)
     --fields <f1,f2,...>      Return only these paper fields
+    --api                     Use Atom XML API instead of HTML scraping
 
   categories                  List common arXiv categories.
 
@@ -42,6 +49,7 @@ Output:
 Examples:
   arxiv search "transformer attention mechanism" --max 5
   arxiv search "large language models" --cat cs.CL --sort submittedDate --order desc
+  arxiv search "Yann LeCun" --type author --max 10
   arxiv paper 2301.07041 --fields id,title,authors,summary
   arxiv download 2301.07041 --dry-run
   arxiv download 2301.07041 -o paper.pdf

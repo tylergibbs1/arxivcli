@@ -1,7 +1,7 @@
 const SCHEMAS: Record<string, object> = {
   search: {
     command: "search",
-    description: "Search arXiv papers by query string",
+    description: "Search arXiv papers by query string. Scrapes arxiv.org HTML by default (no API key needed).",
     args: {
       query: { type: "string", required: true, positional: true, description: "Search query (arXiv query syntax supported)" },
       "--max, -n": { type: "integer", default: 10, description: "Maximum number of results" },
@@ -9,7 +9,9 @@ const SCHEMAS: Record<string, object> = {
       "--sort": { type: "enum", values: ["relevance", "lastUpdatedDate", "submittedDate"], description: "Sort field" },
       "--order": { type: "enum", values: ["asc", "desc"], description: "Sort order" },
       "--category, --cat, -c": { type: "string", description: "Filter by arXiv category (e.g. cs.AI)" },
+      "--type, -t": { type: "enum", values: ["all", "title", "author", "abstract"], default: "all", description: "Search field type (scrape mode only)" },
       "--fields": { type: "string", description: "Comma-separated list of paper fields to return" },
+      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
     },
     response: {
       query: "string",
@@ -21,10 +23,11 @@ const SCHEMAS: Record<string, object> = {
   },
   paper: {
     command: "paper",
-    description: "Get full metadata for a single paper by arXiv ID",
+    description: "Get full metadata for a single paper by arXiv ID. Scrapes the abstract page by default.",
     args: {
       id: { type: "string", required: true, positional: true, description: "arXiv paper ID (e.g. 2301.07041)" },
       "--fields": { type: "string", description: "Comma-separated list of paper fields to return" },
+      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
     },
     response: "Paper",
   },
@@ -35,6 +38,7 @@ const SCHEMAS: Record<string, object> = {
       id: { type: "string", required: true, positional: true, description: "arXiv paper ID" },
       "--output, -o": { type: "string", description: "Output file path (default: <id>.pdf)" },
       "--dry-run": { type: "boolean", description: "Validate and resolve PDF URL without downloading" },
+      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
     },
     response: { id: "string", path: "string", pdfUrl: "string (dry-run only)" },
   },
@@ -45,6 +49,7 @@ const SCHEMAS: Record<string, object> = {
       category: { type: "string", required: true, positional: true, description: "arXiv category (e.g. cs.AI, stat.ML)" },
       "--max, -n": { type: "integer", default: 10, description: "Maximum number of results" },
       "--fields": { type: "string", description: "Comma-separated list of paper fields to return" },
+      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
     },
     response: "SearchResult",
   },
@@ -61,15 +66,15 @@ const SCHEMAS: Record<string, object> = {
       title: "string",
       summary: "string — abstract text",
       authors: "string[]",
-      published: "string — ISO 8601 datetime",
-      updated: "string — ISO 8601 datetime",
+      published: "string — ISO 8601 datetime (paper command only)",
+      updated: "string — ISO 8601 datetime (paper command only)",
       categories: "string[] — all arXiv categories",
       primaryCategory: "string",
       links: "{ href, type?, title? }[]",
       pdfUrl: "string | null",
-      doi: "string | null",
-      comment: "string | null",
-      journalRef: "string | null",
+      doi: "string | null (paper command only)",
+      comment: "string | null (paper command only)",
+      journalRef: "string | null (paper command only)",
     },
   },
 };

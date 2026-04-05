@@ -1,4 +1,5 @@
 import { getPaper, downloadPdf } from "../api";
+import { scrapePaper } from "../scrape";
 import { ok, err, type CLIOutput } from "../types";
 import { validateArxivId, validateOutputPath } from "../validate";
 
@@ -10,6 +11,7 @@ export async function downloadCommand(
   if (idErr) return idErr;
 
   const dryRun = args.includes("--dry-run");
+  const useAtomApi = args.includes("--api");
 
   let output: string | undefined;
   const outIdx = args.indexOf("--output");
@@ -23,11 +25,24 @@ export async function downloadCommand(
   }
 
   if (dryRun) {
-    const paper = await getPaper(id);
+    const paper = useAtomApi ? await getPaper(id) : await scrapePaper(id);
     if (!paper.pdfUrl) return err("NO_PDF", `No PDF available for ${id}`);
     return ok({ id, pdfUrl: paper.pdfUrl });
   }
 
-  const path = await downloadPdf(id, output);
-  return ok({ id, path });
+  // downloadPdf uses the Atom API internally — for scrape path, resolve URL then download
+  if (useAtomApi) {
+    const path = await downloadPdf(id, output);
+    return ok({ id, path });
+  }
+
+  const paper = await scrapePaper(id);
+  if (!paper.pdfUrl) return err("NO_PDF", `No PDF available for ${id}`);
+
+  const res = await fetch(paper.pdfUrl);
+  if (!res.ok) return err("DOWNLOAD_FAILED", `Failed to download PDF: ${res.status}`);
+
+  const dest = output ?? `${id.replace("/", "_")}.pdf`;
+  await Bun.write(dest, res);
+  return ok({ id, path: dest });
 }

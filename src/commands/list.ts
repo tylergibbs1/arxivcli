@@ -40,6 +40,7 @@ export async function listCommand(args: string[]): Promise<CLIOutput<SearchResul
     }
   }
 
+  // list always uses Atom API — the HTML search doesn't support category-only queries
   const result = await search({
     query: `cat:${category}`,
     maxResults: max,

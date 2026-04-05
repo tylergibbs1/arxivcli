@@ -1,5 +1,6 @@
 import { search } from "../api";
-import type { CLIOutput, SearchResult } from "../types";
+import { ok, err, pickFields, type CLIOutput, type SearchResult, type Paper } from "../types";
+import { validateCategory } from "../validate";
 
 const CATEGORIES: Record<string, string> = {
   "cs.AI": "Artificial Intelligence",
@@ -18,24 +19,26 @@ const CATEGORIES: Record<string, string> = {
   "econ.GN": "General Economics",
 };
 
-export function categoriesCommand(): { ok: boolean; data: Record<string, string> } {
-  return { ok: true, data: CATEGORIES };
+export function categoriesCommand(): CLIOutput<Record<string, string>> {
+  return ok(CATEGORIES);
 }
 
 export async function listCommand(args: string[]): Promise<CLIOutput<SearchResult>> {
   const category = args[0];
-  if (!category) {
-    return {
-      ok: false,
-      error: `Missing required argument: category. Usage: arxiv list <category> [--max <n>]\nCommon categories: ${Object.keys(CATEGORIES).join(", ")}`,
-    };
-  }
+  const catErr = validateCategory(category);
+  if (catErr) return catErr;
 
   let max = 10;
-  const maxIdx = args.indexOf("--max");
-  if (maxIdx !== -1) max = parseInt(args[maxIdx + 1] ?? "10");
-  const nIdx = args.indexOf("-n");
-  if (nIdx !== -1) max = parseInt(args[nIdx + 1] ?? "10");
+  let fields: string[] | undefined;
+
+  for (let i = 1; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--max" || arg === "-n") {
+      max = parseInt(args[++i] ?? "10");
+    } else if (arg === "--fields") {
+      fields = args[++i]?.split(",").map((f) => f.trim());
+    }
+  }
 
   const result = await search({
     query: `cat:${category}`,
@@ -44,5 +47,9 @@ export async function listCommand(args: string[]): Promise<CLIOutput<SearchResul
     sortOrder: "descending",
   });
 
-  return { ok: true, data: result };
+  if (fields) {
+    result.papers = result.papers.map((p) => pickFields(p, fields!) as Paper);
+  }
+
+  return ok(result);
 }

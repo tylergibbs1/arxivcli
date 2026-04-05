@@ -1,12 +1,16 @@
 import { getPaper } from "../api";
-import type { CLIOutput, Paper } from "../types";
+import { ok, err, pickFields, type CLIOutput, type Paper } from "../types";
+import { validateArxivId } from "../validate";
 
-export async function paperCommand(args: string[]): Promise<CLIOutput<Paper>> {
+export async function paperCommand(args: string[]): Promise<CLIOutput<Paper | Partial<Paper>>> {
   const id = args[0];
-  if (!id) {
-    return { ok: false, error: "Missing required argument: paper ID. Usage: arxiv paper <arxiv-id>" };
-  }
+  const idErr = validateArxivId(id);
+  if (idErr) return idErr;
+
+  let fields: string[] | undefined;
+  const fIdx = args.indexOf("--fields");
+  if (fIdx !== -1) fields = args[fIdx + 1]?.split(",").map((f) => f.trim());
 
   const paper = await getPaper(id);
-  return { ok: true, data: paper };
+  return ok(fields ? pickFields(paper, fields) as Partial<Paper> : paper);
 }

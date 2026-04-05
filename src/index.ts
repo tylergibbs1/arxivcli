@@ -4,6 +4,7 @@ import { searchCommand } from "./commands/search";
 import { paperCommand } from "./commands/paper";
 import { downloadCommand } from "./commands/download";
 import { listCommand, categoriesCommand } from "./commands/list";
+import { schemaCommand } from "./schema";
 import type { CLIOutput } from "./types";
 
 const HELP = `arxiv — agent-friendly arXiv CLI
@@ -15,29 +16,37 @@ Commands:
     --sort <field>            Sort by: relevance | lastUpdatedDate | submittedDate
     --order <dir>             Order: asc | desc
     --category, --cat, -c     Filter by category (e.g. cs.AI)
+    --fields <f1,f2,...>      Return only these paper fields
 
   paper <arxiv-id>            Get full metadata for a single paper.
+    --fields <f1,f2,...>      Return only these paper fields
 
   download <arxiv-id>         Download paper PDF.
     --output, -o <path>       Output file path
+    --dry-run                 Resolve PDF URL without downloading
 
   list <category>             List recent papers in a category.
     --max, -n <num>           Max results (default: 10)
+    --fields <f1,f2,...>      Return only these paper fields
 
   categories                  List common arXiv categories.
+
+  schema [command|Paper]      Introspect command schemas and types.
 
   help                        Show this help message.
 
 Output:
-  All commands output JSON to stdout: { ok: boolean, data?: ..., error?: string }
+  All commands output JSON to stdout: { ok, code?, data?, error? }
   Exit code 0 on success, 1 on error.
 
 Examples:
   arxiv search "transformer attention mechanism" --max 5
   arxiv search "large language models" --cat cs.CL --sort submittedDate --order desc
-  arxiv paper 2301.07041
+  arxiv paper 2301.07041 --fields id,title,authors,summary
+  arxiv download 2301.07041 --dry-run
   arxiv download 2301.07041 -o paper.pdf
   arxiv list cs.AI --max 20
+  arxiv schema search
 `;
 
 async function main() {
@@ -45,7 +54,7 @@ async function main() {
 
   if (!command || command === "help" || command === "--help" || command === "-h") {
     if (!command) {
-      output({ ok: false, error: "No command provided. Use 'arxiv help' for usage." });
+      output({ ok: false, code: "NO_COMMAND", error: "No command provided. Use 'arxiv help' for usage." });
       process.exit(1);
     }
     process.stdout.write(HELP);
@@ -70,8 +79,11 @@ async function main() {
     case "categories":
       result = categoriesCommand();
       break;
+    case "schema":
+      result = schemaCommand(args);
+      break;
     default:
-      result = { ok: false, error: `Unknown command: ${command}. Use 'arxiv help' for usage.` };
+      result = { ok: false, code: "UNKNOWN_COMMAND", error: `Unknown command: "${command}". Use 'arxiv help' for usage.` };
   }
 
   output(result);
@@ -83,6 +95,6 @@ function output(data: CLIOutput) {
 }
 
 main().catch((err) => {
-  output({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  output({ ok: false, code: "UNEXPECTED_ERROR", error: err instanceof Error ? err.message : String(err) });
   process.exit(1);
 });

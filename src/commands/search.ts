@@ -1,15 +1,18 @@
 import { search } from "../api";
-import type { CLIOutput, SearchResult } from "../types";
+import { ok, err, pickFields, type CLIOutput, type SearchResult, type Paper } from "../types";
+import { validateCategory } from "../validate";
 
 export async function searchCommand(args: string[]): Promise<CLIOutput<SearchResult>> {
   const flags = parseFlags(args);
 
   if (!flags.query) {
-    return { ok: false, error: "Missing required argument: query. Usage: arxiv search <query> [--max <n>] [--start <n>] [--sort <field>] [--order <asc|desc>] [--category <cat>]" };
+    return err("MISSING_QUERY", "Missing required argument: query. Usage: arxiv search <query> [--max <n>] [--start <n>] [--sort <field>] [--order <asc|desc>] [--category <cat>] [--fields <f1,f2>]");
   }
 
   let query = flags.query;
   if (flags.category) {
+    const catErr = validateCategory(flags.category);
+    if (catErr) return catErr;
     query = `cat:${flags.category} AND (${query})`;
   }
 
@@ -21,16 +24,20 @@ export async function searchCommand(args: string[]): Promise<CLIOutput<SearchRes
     sortOrder: flags.order,
   });
 
-  return { ok: true, data: result };
+  if (flags.fields) {
+    result.papers = result.papers.map((p) => pickFields(p, flags.fields!) as Paper);
+  }
+
+  return ok(result);
 }
 
 function parseFlags(args: string[]) {
-  let query = "";
   let max = 10;
   let start = 0;
   let sort: "relevance" | "lastUpdatedDate" | "submittedDate" | undefined;
   let order: "ascending" | "descending" | undefined;
   let category: string | undefined;
+  let fields: string[] | undefined;
 
   const positional: string[] = [];
 
@@ -47,11 +54,13 @@ function parseFlags(args: string[]) {
       order = v === "asc" ? "ascending" : v === "desc" ? "descending" : undefined;
     } else if (arg === "--category" || arg === "--cat" || arg === "-c") {
       category = args[++i];
+    } else if (arg === "--fields") {
+      fields = args[++i]?.split(",").map((f) => f.trim());
     } else {
       positional.push(arg);
     }
   }
 
-  query = positional.join(" ");
-  return { query, max, start, sort, order, category };
+  const query = positional.join(" ");
+  return { query, max, start, sort, order, category, fields };
 }

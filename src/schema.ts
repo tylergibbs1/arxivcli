@@ -10,7 +10,7 @@ const SCHEMAS: Record<string, object> = {
       "--order": { values: ["asc", "desc"] },
       "--category": { type: "string", description: "e.g. cs.AI" },
       "--type": { values: ["all", "title", "author", "abstract"], default: "all", description: "scrape only" },
-      "--fields": { type: "string", description: "comma-sep Paper fields" },
+      "--fields": { type: "string", description: "csv Paper fields" },
       "--api": { type: "boolean" },
     },
     response: { query: "string", totalResults: "integer", startIndex: "integer", itemsPerPage: "integer", papers: "Paper[]" },
@@ -20,7 +20,7 @@ const SCHEMAS: Record<string, object> = {
     description: "Get metadata for one paper.",
     args: {
       id: { type: "string", required: true, positional: true, description: "e.g. 2301.07041" },
-      "--fields": { type: "string", description: "comma-sep Paper fields" },
+      "--fields": { type: "string", description: "csv Paper fields" },
       "--api": { type: "boolean" },
     },
     response: "Paper",
@@ -42,7 +42,7 @@ const SCHEMAS: Record<string, object> = {
     args: {
       category: { type: "string", required: true, positional: true, description: "e.g. cs.AI" },
       "--max": { type: "integer", default: 10 },
-      "--fields": { type: "string", description: "comma-sep Paper fields" },
+      "--fields": { type: "string", description: "csv Paper fields" },
       "--api": { type: "boolean" },
     },
     response: "SearchResult",

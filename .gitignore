@@ -36,3 +36,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Auto-research loop logs
 run.log
 results.tsv
+
+# macOS AppleDouble sidecar files (exFAT)
+._*
+.DS_Store

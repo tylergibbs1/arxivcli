@@ -1,95 +1,87 @@
 const SCHEMAS: Record<string, object> = {
   search: {
     command: "search",
-    description: "Search arXiv papers by query string. Scrapes arxiv.org HTML by default (no API key needed).",
+    description: "Search arXiv papers; scrapes HTML by default.",
     args: {
-      query: { type: "string", required: true, positional: true, description: "Search query (arXiv query syntax supported)" },
-      "--max, -n": { type: "integer", default: 10, description: "Maximum number of results" },
-      "--start, -s": { type: "integer", default: 0, description: "Start index for pagination" },
-      "--sort": { type: "enum", values: ["relevance", "lastUpdatedDate", "submittedDate"], description: "Sort field" },
-      "--order": { type: "enum", values: ["asc", "desc"], description: "Sort order" },
-      "--category, --cat, -c": { type: "string", description: "Filter by arXiv category (e.g. cs.AI)" },
-      "--type, -t": { type: "enum", values: ["all", "title", "author", "abstract"], default: "all", description: "Search field type (scrape mode only)" },
-      "--fields": { type: "string", description: "Comma-separated list of paper fields to return" },
-      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
+      query: { type: "string", required: true, positional: true },
+      "--max": { type: "integer", default: 10 },
+      "--start": { type: "integer", default: 0 },
+      "--sort": { values: ["relevance", "lastUpdatedDate", "submittedDate"] },
+      "--order": { values: ["asc", "desc"] },
+      "--category": { type: "string", description: "e.g. cs.AI" },
+      "--type": { values: ["all", "title", "author", "abstract"], default: "all", description: "scrape only" },
+      "--fields": { type: "string", description: "csv Paper fields" },
+      "--api": { type: "boolean" },
     },
-    response: {
-      query: "string",
-      totalResults: "integer",
-      startIndex: "integer",
-      itemsPerPage: "integer",
-      papers: "Paper[]",
-    },
+    response: { query: "string", totalResults: "integer", startIndex: "integer", itemsPerPage: "integer", papers: "Paper[]" },
   },
   paper: {
     command: "paper",
-    description: "Get full metadata for a single paper by arXiv ID. Scrapes the abstract page by default.",
+    description: "Get metadata for one paper.",
     args: {
-      id: { type: "string", required: true, positional: true, description: "arXiv paper ID (e.g. 2301.07041)" },
-      "--fields": { type: "string", description: "Comma-separated list of paper fields to return" },
-      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
+      id: { type: "string", required: true, positional: true, description: "e.g. 2301.07041" },
+      "--fields": { type: "string", description: "csv Paper fields" },
+      "--api": { type: "boolean" },
     },
     response: "Paper",
   },
   download: {
     command: "download",
-    description: "Download a paper's PDF to disk",
+    description: "Download paper PDF.",
     args: {
-      id: { type: "string", required: true, positional: true, description: "arXiv paper ID" },
-      "--output, -o": { type: "string", description: "Output file path (default: <id>.pdf)" },
-      "--dry-run": { type: "boolean", description: "Validate and resolve PDF URL without downloading" },
-      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
+      id: { type: "string", required: true, positional: true },
+      "--output": { type: "string", description: "default <id>.pdf" },
+      "--dry-run": { type: "boolean", description: "resolve URL only" },
+      "--api": { type: "boolean" },
     },
     response: { id: "string", path: "string", pdfUrl: "string (dry-run only)" },
   },
   list: {
     command: "list",
-    description: "List recent papers in an arXiv category",
+    description: "List recent papers in a category.",
     args: {
-      category: { type: "string", required: true, positional: true, description: "arXiv category (e.g. cs.AI, stat.ML)" },
-      "--max, -n": { type: "integer", default: 10, description: "Maximum number of results" },
-      "--fields": { type: "string", description: "Comma-separated list of paper fields to return" },
-      "--api": { type: "boolean", description: "Use Atom XML API instead of HTML scraping" },
+      category: { type: "string", required: true, positional: true, description: "e.g. cs.AI" },
+      "--max": { type: "integer", default: 10 },
+      "--fields": { type: "string", description: "csv Paper fields" },
+      "--api": { type: "boolean" },
     },
     response: "SearchResult",
   },
   categories: {
     command: "categories",
-    description: "List common arXiv categories with descriptions",
+    description: "List common arXiv categories.",
     args: {},
     response: "Record<string, string>",
   },
   Paper: {
     type: "object",
     fields: {
-      id: "string — arXiv ID (e.g. 2301.07041)",
+      id: "string",
       title: "string",
-      summary: "string — abstract text",
+      summary: "string",
       authors: "string[]",
-      published: "string — ISO 8601 datetime (paper command only)",
-      updated: "string — ISO 8601 datetime (paper command only)",
-      categories: "string[] — all arXiv categories",
+      published: "string",
+      updated: "string",
+      categories: "string[]",
       primaryCategory: "string",
-      links: "{ href, type?, title? }[]",
-      pdfUrl: "string | null",
-      doi: "string | null (paper command only)",
-      comment: "string | null (paper command only)",
-      journalRef: "string | null (paper command only)",
+      links: "{href,type?,title?}[]",
+      pdfUrl: "string|null",
+      doi: "string|null",
+      comment: "string|null",
+      journalRef: "string|null",
     },
+    paperOnly: ["published", "updated", "doi", "comment", "journalRef"],
   },
 };
 
 export function schemaCommand(args: string[]): { ok: boolean; code?: string; data?: object; error?: string } {
   const target = args[0];
-
   if (!target) {
     return { ok: true, data: { commands: Object.keys(SCHEMAS).filter(k => k !== "Paper"), types: ["Paper"] } };
   }
-
   const schema = SCHEMAS[target];
   if (!schema) {
     return { ok: false, code: "UNKNOWN_SCHEMA", error: `Unknown schema: "${target}". Available: ${Object.keys(SCHEMAS).join(", ")}` };
   }
-
   return { ok: true, data: schema };
 }

@@ -62,7 +62,7 @@ async function main() {
 
   if (!command || command === "help" || command === "--help" || command === "-h") {
     if (!command) {
-      output({ ok: false, code: "NO_COMMAND", error: "No command provided. Use 'arxiv help' for usage." });
+      output({ ok: false, code: "NO_COMMAND", error: "No command provided." });
       process.exit(1);
     }
     process.stdout.write(HELP);
@@ -91,7 +91,7 @@ async function main() {
       result = schemaCommand(args);
       break;
     default:
-      result = { ok: false, code: "UNKNOWN_COMMAND", error: `Unknown command: "${command}". Use 'arxiv help' for usage.` };
+      result = { ok: false, code: "UNKNOWN_COMMAND", error: `Unknown command: "${command}"` };
   }
 
   output(result);

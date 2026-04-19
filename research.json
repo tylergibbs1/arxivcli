@@ -1,0 +1,30 @@
+{
+  "tag": "apr18",
+  "description": "Minimize total stdout bytes across 10 deterministic CLI invocations (schema, categories, error paths) with a correctness gate: every case must produce valid JSON with the expected ok flag and required non-empty fields.",
+  "metric_name": "bytes",
+  "metric_direction": "lower",
+  "secondary_metrics": ["cases_ok", "ms"],
+  "run_command": "bun run bench/bench.ts",
+  "metric_extract_grep": "^METRICS",
+  "modifiable_files": [
+    "src/index.ts",
+    "src/schema.ts",
+    "src/types.ts",
+    "src/validate.ts",
+    "src/api.ts",
+    "src/scrape.ts",
+    "src/commands/search.ts",
+    "src/commands/paper.ts",
+    "src/commands/download.ts",
+    "src/commands/list.ts"
+  ],
+  "readonly_files": [
+    "bench/bench.ts",
+    "package.json",
+    "tsconfig.json",
+    "CLAUDE.md",
+    "README.md"
+  ],
+  "timeout_seconds": 120,
+  "no_new_dependencies": true
+}

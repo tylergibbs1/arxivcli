@@ -99,7 +99,7 @@ async function main() {
 }
 
 function output(data: CLIOutput) {
-  process.stdout.write(JSON.stringify(data, null, 2) + "\n");
+  process.stdout.write(JSON.stringify(data) + "\n");
 }
 
 main().catch((err) => {

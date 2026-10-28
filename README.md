@@ -4,14 +4,37 @@ Agent-friendly CLI for searching and retrieving papers from arXiv. Built with Ty
 
 Scrapes arxiv.org HTML by default — richer search filters (title/author/abstract search types) and no rate limits. Falls back to the Atom XML API with `--api`.
 
-## Install
+## Quick start
 
 ```bash
 bun install
 bun link   # makes `arxiv` available globally
+arxiv search "transformer attention mechanism" --max 5
 ```
 
-## Commands
+## How it works
+
+Two data engines, same output format:
+
+| Engine | Used by default | How it works |
+|---|---|---|
+| **HTML scraping** | `search`, `paper`, `download` | Fetches arxiv.org pages, parses `citation_*` meta tags and search result HTML |
+| **Atom XML API** | `list`, or any command with `--api` | Queries `export.arxiv.org/api/query`, parses XML |
+
+Both are keyless and return the same `Paper` schema.
+
+## Features
+
+- **Structured JSON output** — every response is `{ ok, code?, data?, error? }`, machine-parseable
+- **Error codes** — typed `code` field (`INVALID_ID`, `MISSING_QUERY`, etc.) for programmatic error handling
+- **Schema introspection** — `arxiv schema <command>` returns full argument/response schemas as JSON
+- **Field filtering** — `--fields id,title,authors` limits response size to save context window budget
+- **Dry-run** — `arxiv download --dry-run` validates and resolves without side effects
+- **Input validation** — rejects path traversal, control characters, malformed IDs, and embedded query params
+- **No interactive prompts** — pure stdin/stdout, no TTY required
+- **No API key** — scrapes arxiv.org directly, zero auth setup
+
+## Usage
 
 ### search
 
@@ -81,29 +104,7 @@ arxiv schema search    # full schema for the search command
 arxiv schema Paper     # Paper type definition
 ```
 
-## How It Works
-
-Two data engines, same output format:
-
-| Engine | Used by default | How it works |
-|---|---|---|
-| **HTML scraping** | `search`, `paper`, `download` | Fetches arxiv.org pages, parses `citation_*` meta tags and search result HTML |
-| **Atom XML API** | `list`, or any command with `--api` | Queries `export.arxiv.org/api/query`, parses XML |
-
-Both are keyless and return the same `Paper` schema.
-
-## Agent Design
-
-- **Structured JSON output** — every response is `{ ok, code?, data?, error? }`, machine-parseable
-- **Error codes** — typed `code` field (`INVALID_ID`, `MISSING_QUERY`, etc.) for programmatic error handling
-- **Schema introspection** — `arxiv schema <command>` returns full argument/response schemas as JSON
-- **Field filtering** — `--fields id,title,authors` limits response size to save context window budget
-- **Dry-run** — `arxiv download --dry-run` validates and resolves without side effects
-- **Input validation** — rejects path traversal, control characters, malformed IDs, and embedded query params
-- **No interactive prompts** — pure stdin/stdout, no TTY required
-- **No API key** — scrapes arxiv.org directly, zero auth setup
-
-## Paper Fields
+### Paper fields
 
 Available fields for `--fields` filtering:
 
